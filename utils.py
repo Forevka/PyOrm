@@ -1,5 +1,6 @@
 import typing
 
+T = typing.TypeVar('T')
 ConnGen = typing.TypeVar('ConnGen')
 
 def get_all_property(annot, cls_dict):

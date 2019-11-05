@@ -28,7 +28,7 @@ class SimpleOrm:
 
     def entity(self, model: typing.Type[Model],):
         _table = Table(model.__table__, schema=self._schema)
-        model.find = MyQueryBuilder(self._conn, model).from_(_table).select
+        model.find = MyQueryBuilder[model](self._conn, model).from_(_table).select
         for i in get_all_property(model.__dict__['__annotations__'], model.__dict__):
             model.__dict__[i]._setup(i)
 
@@ -57,15 +57,13 @@ class User(Model):
     name: FieldStr = FieldStr()
     age: FieldInt = FieldInt()
 
-    def __str__(self) -> str:
-        return f'User {self.id} {self.name} {self.age}'
-
 
 class Address(Model):
     __table__ = 'address'
 
     id: FieldInt = FieldInt()
     descr: FieldStr = FieldStr()
+
 
 async def main():
     db = {
@@ -77,6 +75,7 @@ async def main():
     await orm.connect()
 
     orm.entity(User)
+    orm.entity(Address)
 
     user = await User.filter().first()
     print(user)
@@ -85,6 +84,9 @@ async def main():
     for i in users:
         print(i)
     
+    addresses = await Address.filter().all()
+    for i in addresses:
+        print(i)
 
 if __name__ == "__main__":
     asyncio.run(main())
