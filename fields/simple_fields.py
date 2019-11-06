@@ -19,6 +19,7 @@ class OneToOneField(Field):
     to_link: str
     related_model: 'Model'
     _required: bool
+    _orm: None
 
     def __init__(self, *args, related_model = None, from_link = '', to_link = '',):
         self.from_link = from_link
@@ -30,8 +31,9 @@ class OneToOneField(Field):
     def _setup(self, varname: str):
         self.name = varname
 
-    def _marshall(self, value: str):
-        self.value = value
+    def _marshall(self, values: dict):
+        print(values)
+        self.value = self._orm._repository[self.related_model].__dict__.update(**values)
         return self
         
     def __str__(self,):

@@ -4,7 +4,7 @@ import asyncio
 import typing
 import asyncpg
 from loguru import logger
-import dsnparse
+#import dsnparse
 from utils import ConnGen
 from meta_model import Model
 from my_query_builder import MyQueryBuilder, T
@@ -28,14 +28,21 @@ class SimpleOrm:
 
     def entity(self, model: typing.Type[Model],):
         model._table = Table(model.__table__, schema=self._schema)
+        model._orm = self
         model.find = MyQueryBuilder[model](self, model).from_(model._table).select
         model._include = MyQueryBuilder[model](self, model).from_(model._table).join
+        model._query = MyQueryBuilder[model](self, model).from_(model._table)
         
         model._fields = []
         self._repository[model.__name__] = model
         for i in get_all_property(model.__dict__['__annotations__'], model.__dict__):
             model.__dict__[i]._setup(i)
+            model.__dict__[i]._orm = self
+            #logger.info(model.__dict__[i].name)
             model._fields.append(model.__dict__[i])
+        
+        #a = model._query.select(*[i for i in model._fields if i._required == True])
+        #print(a)
 
     @property
     def connection_string(self):
@@ -53,50 +60,3 @@ class SimpleOrm:
 
     async def connect(self,):
         self._conn = await asyncpg.connect(**self._connection_dict)
-
-
-class User(Model):
-    __table__ = 'user'
-
-    id: FieldInt = FieldInt(pk = True)
-    name: FieldStr = FieldStr()
-    age: FieldInt = FieldInt()
-
-    address: OneToOneField = OneToOneField(related_model='Address', from_link='User.id', to_link='Address.id')
-
-
-class Address(Model):
-    __table__ = 'address'
-
-    id: FieldInt = FieldInt(pk = True)
-    descr: FieldStr = FieldStr()
-
-
-async def main():
-    db = {
-        "user": "postgres",
-        "password": "werdwerd2012",
-        "database": "orm_test",
-        "host": "194.67.198.163",
-    }
-
-    orm = SimpleOrm()
-    orm.connection_string = db
-    await orm.connect()
-
-    orm.entity(User)
-    orm.entity(Address)
-
-    user =  User.filter().include(User.address)
-    print(user)
-
-    users = await User.filter().all()
-    for i in users:
-        print(i)
-    
-    addresses = await Address.filter().all()
-    for i in addresses:
-        print(i)
-
-if __name__ == "__main__":
-    asyncio.run(main())
