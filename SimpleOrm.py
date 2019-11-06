@@ -8,7 +8,7 @@ import dsnparse
 from utils import ConnGen
 from meta_model import Model
 from my_query_builder import MyQueryBuilder, T
-from fields.simple_fields import FieldInt, FieldStr
+from fields.simple_fields import FieldInt, FieldStr, OneToOneField
 from utils import get_all_property
 
 class DBType:
@@ -19,18 +19,23 @@ class SimpleOrm:
     _schema: Schema
     _connection_string: str
     _connection_dict: dict
-    _conn: typing.Generic[ConnGen]
+    _conn: asyncpg.Connection
     _db_type: DBType
 
     def __init__(self, schema_name: str = None,):
         self._schema = Schema(schema_name) if schema_name != None else None
-        self._repositoryes = {}
+        self._repository = {}
 
     def entity(self, model: typing.Type[Model],):
-        _table = Table(model.__table__, schema=self._schema)
-        model.find = MyQueryBuilder[model](self._conn, model).from_(_table).select
+        model._table = Table(model.__table__, schema=self._schema)
+        model.find = MyQueryBuilder[model](self, model).from_(model._table).select
+        model._include = MyQueryBuilder[model](self, model).from_(model._table).join
+        
+        model._fields = []
+        self._repository[model.__name__] = model
         for i in get_all_property(model.__dict__['__annotations__'], model.__dict__):
             model.__dict__[i]._setup(i)
+            model._fields.append(model.__dict__[i])
 
     @property
     def connection_string(self):
@@ -53,21 +58,26 @@ class SimpleOrm:
 class User(Model):
     __table__ = 'user'
 
-    id: FieldInt = FieldInt()
+    id: FieldInt = FieldInt(pk = True)
     name: FieldStr = FieldStr()
     age: FieldInt = FieldInt()
+
+    address: OneToOneField = OneToOneField(related_model='Address', from_link='User.id', to_link='Address.id')
 
 
 class Address(Model):
     __table__ = 'address'
 
-    id: FieldInt = FieldInt()
+    id: FieldInt = FieldInt(pk = True)
     descr: FieldStr = FieldStr()
 
 
 async def main():
     db = {
-        
+        "user": "postgres",
+        "password": "werdwerd2012",
+        "database": "orm_test",
+        "host": "194.67.198.163",
     }
 
     orm = SimpleOrm()
@@ -77,7 +87,7 @@ async def main():
     orm.entity(User)
     orm.entity(Address)
 
-    user = await User.filter().first()
+    user =  User.include(User.address)
     print(user)
 
     users = await User.filter().all()

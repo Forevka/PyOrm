@@ -1,4 +1,6 @@
-from .meta_field import MetaField
+from .meta_field import MetaField, T
+from pypika import Field
+import typing
 
 class FieldStr(MetaField):
     def __str__(self,) -> str:
@@ -8,3 +10,29 @@ class FieldStr(MetaField):
 class FieldInt(MetaField):
     def __str__(self,) -> str:
         return str(self.value)
+
+
+class OneToOneField(Field):
+    name: str
+    value: typing.Generic[T]
+    from_link: str
+    to_link: str
+    related_model: 'Model'
+    _required: bool
+
+    def __init__(self, *args, related_model = None, from_link = '', to_link = '',):
+        self.from_link = from_link
+        self.to_link = to_link
+        self.related_model = related_model
+        self._required = False
+        super(Field, self).__init__(self, *args)
+
+    def _setup(self, varname: str):
+        self.name = varname
+
+    def _marshall(self, value: str):
+        self.value = value
+        return self
+        
+    def __str__(self,):
+        return self.value
