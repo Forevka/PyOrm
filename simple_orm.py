@@ -8,7 +8,7 @@ from loguru import logger
 from utils import ConnGen
 from meta_model import Model
 from my_query_builder import MyQueryBuilder, T
-from fields.simple_fields import FieldInt, FieldStr, OneToOneField
+from fields.simple_fields import FieldInt, FieldStr, OneToManyField
 from utils import get_all_property
 
 class DBType:
@@ -33,7 +33,8 @@ class SimpleOrm:
         model._include = MyQueryBuilder[model](self, model).from_(model._table).join
         model._query = MyQueryBuilder[model](self, model).from_(model._table)
         
-        model._fields = []
+        model._fields = []#get_all_property(model.__dict__['__annotations__'], model.__dict__)
+        model._related = []
         self._repository[model.__name__] = model
         for i in get_all_property(model.__dict__['__annotations__'], model.__dict__):
             model.__dict__[i]._setup(i)

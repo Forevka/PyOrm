@@ -20,10 +20,12 @@ async def main():
   orm.entity(Address)
   orm.entity(Question)
 
-  user = User.filter(User.id == 123).include(User.address)
-  logger.info(User.query)
-  logger.info(User.query)
+  print(User.get_pk())
+
+  user = User.filter().include(User.address).query
   print(user)
+  u = await user.all()
+  print(u)
 
   ''' users = await User.filter().all()
   for i in users:

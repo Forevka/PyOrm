@@ -1,9 +1,12 @@
 import typing
+from loguru import logger
 
 T = typing.TypeVar('T')
 ConnGen = typing.TypeVar('ConnGen')
 
 def get_all_property(annot, cls_dict):
+    logger.info(annot)
+    logger.info(cls_dict)
     for i in cls_dict:
         if i in annot:
             yield i

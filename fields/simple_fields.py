@@ -3,26 +3,26 @@ from pypika import Field
 import typing
 
 class FieldStr(MetaField):
-    def __str__(self,) -> str:
-        return str(self.value)
+  pass
 
 
 class FieldInt(MetaField):
-    def __str__(self,) -> str:
-        return str(self.value)
+  pass
 
 
-class OneToOneField(Field):
+class OneToManyField(Field):
     name: str
     value: typing.Generic[T]
     from_link: str
     to_link: str
     related_model: 'Model'
-    _required: bool
+    primary_key = False
+    _required: bool = False
     _orm: None
 
     def __init__(self, *args, related_model = None, from_link = '', to_link = '',):
         self.from_link = from_link
+        self.value = None
         self.to_link = to_link
         self.related_model = related_model
         self._required = False
@@ -33,8 +33,8 @@ class OneToOneField(Field):
 
     def _marshall(self, values: dict):
         print(values)
-        self.value = self._orm._repository[self.related_model].__dict__.update(**values)
+        self.value = values
         return self
         
     def __str__(self,):
-        return self.value
+        return str(self.value)
